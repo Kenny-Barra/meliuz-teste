@@ -79,7 +79,7 @@ Em resumo: a mesma engrenagem de cálculo serve as duas. O app web entrega isso 
 
 ## 3. Começando rápido
 
-**Só ver funcionando:** abra o link do app publicado (no topo do repositório) e arraste um dos CSVs do teste (os datasets originais não estão no repositório por serem confidenciais; veja `dados/LEIA-ME.txt`).
+**Só ver funcionando:** abra o link do app publicado e arraste um dos CSVs do teste (os datasets originais não estão no repositório por serem confidenciais; veja `dados/LEIA-ME.txt`).
 
 **Rodar no seu computador:**
 ```bash
@@ -88,7 +88,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-**Links do projeto** (preencher depois de publicar):
+**Links do projeto** :
 - App web no ar: [Streamlit](https://meliuz-teste-kennedy.streamlit.app/)
 - Planilha pública: [Google Sheets](https://docs.google.com/spreadsheets/d/1tB9-ddrjvL4QuFyhnOUVoY5Lm0UbsZviqbq4tH4LzHc/edit?usp=sharing)
 
