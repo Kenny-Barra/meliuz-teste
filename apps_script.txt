@@ -1,0 +1,102 @@
+/**
+ * ============================================================
+ *  Apps Script da planilha de testes A/B do Méliuz
+ * ============================================================
+ *
+ * Faz a sua planilha receber, ler e apagar os testes A/B.
+ * Serve tanto a Opção A (app web) quanto a Opção B (Projeto no Claude).
+ * NÃO precisa de Google Cloud, conta de serviço nem arquivo JSON.
+ *
+ * A instalação passo a passo está no README (seção "Conectar ao Google Sheets").
+ * Resumo: Extensões -> Apps Script -> cole isto -> Implantar como App da Web
+ * (Executar como: Eu / Acesso: Qualquer pessoa) -> copie a URL terminada em /exec.
+ *
+ * IMPORTANTE: ao editar este script, crie sempre uma NOVA implantação,
+ * senão a URL continua usando a versão antiga.
+ *
+ * Este script força todas as células de dados para o formato TEXTO. Isso é
+ * proposital: garante que datas e números apareçam exatamente como enviados,
+ * sem o Google reinterpretar (o que causaria formatação inconsistente entre
+ * linhas e divergência na hora de sincronizar com o app).
+ */
+
+// Senha opcional. Deixe "" (vazio) para não usar. Se preencher, use o mesmo
+// valor na variável GOOGLE_APPS_SCRIPT_TOKEN do app (Opção A) ou no prompt (Opção B).
+var TOKEN = "";
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    if (TOKEN && payload.token !== TOKEN) {
+      return _json({ status: "erro", motivo: "token invalido" });
+    }
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var action = payload.action || "append";
+
+    if (action === "append") {
+      var n = (payload.row || payload.headers || []).length;
+
+      // Cria cabeçalho formatado na primeira vez
+      if (sheet.getLastRow() === 0 && payload.headers) {
+        sheet.appendRow(payload.headers);
+        sheet.getRange(1, 1, 1, n)
+          .setFontWeight("bold")
+          .setBackground("#4a154b")
+          .setFontColor("#ffffff")
+          .setHorizontalAlignment("center");
+        sheet.setFrozenRows(1);
+      }
+
+      // Força TODA a área de dados como texto, para não reinterpretar valores
+      if (n > 0) {
+        sheet.getRange(2, 1, Math.max(sheet.getMaxRows() - 1, 1), n).setNumberFormat("@");
+      }
+
+      sheet.appendRow(payload.row);
+      sheet.autoResizeColumns(1, n);
+      return _json({ status: "ok", action: "append" });
+    }
+
+    if (action === "delete") {
+      // Como os nomes de teste são únicos, apaga casando apenas pelo nome.
+      var data = sheet.getDataRange().getDisplayValues();
+      var apagadas = 0;
+
+      function norm(v) { return String(v).trim().toLowerCase(); }
+
+      // Índice da coluna 0 = Nome do teste
+      for (var i = data.length - 1; i >= 1; i--) {
+        if (norm(data[i][0]) === norm(payload.nome_teste)) {
+          sheet.deleteRow(i + 1);
+          apagadas++;
+        }
+      }
+      return _json({ status: "ok", action: "delete", apagadas: apagadas });
+    }
+
+    return _json({ status: "erro", motivo: "acao desconhecida" });
+  } catch (err) {
+    return _json({ status: "erro", motivo: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Devolve a planilha inteira (GET) — usado pelo app para sincronizar
+function doGet(e) {
+  if (TOKEN && (!e || !e.parameter || e.parameter.token !== TOKEN)) {
+    return _json({ status: "erro", motivo: "token invalido" });
+  }
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  // getDisplayValues devolve exatamente o texto exibido (consistente com o envio)
+  var rows = sheet.getDataRange().getDisplayValues();
+  return _json({ status: "ok", rows: rows });
+}
+
+function _json(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}

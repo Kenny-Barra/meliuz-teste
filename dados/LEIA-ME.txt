@@ -1,0 +1,12 @@
+Os datasets originais deste teste não estão incluídos no repositório, pois são
+material confidencial fornecido pela Méliuz.
+
+Para rodar os exemplos (o script gerar_relatorios.py e os comandos do README),
+coloque os três arquivos CSV fornecidos nesta pasta, com os nomes:
+
+    dados/dataset_01_parceiroA.csv
+    dados/dataset_02_parceiroB.csv
+    dados/dataset_03_parceiroC.csv
+
+O app (Opção A) e o Claude Code (Opção B) também aceitam qualquer outro CSV no
+mesmo formato, enviado na hora da análise.
